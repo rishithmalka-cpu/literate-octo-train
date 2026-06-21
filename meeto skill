@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeetoSkill — meet, talk, trade skills</title>
+<style>
+  :root{
+    --primary:#14B8A6;
+    --primary-dark:#0d9488;
+    --secondary:#0F172A;
+    --bg:#FFFFFF;
+    --surface:#F8FAFC;
+    --surface-2:#F1F5F9;
+    --border:#E2E8F0;
+    --muted:#64748B;
+    --danger:#DC2626;
+    --danger-dark:#b91c1c;
+    --radius:14px;
+    --radius-sm:10px;
+    --radius-lg:20px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--secondary);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .label-face{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    text-transform:uppercase;
+    letter-spacing:.13em;
+    font-size:10.5px;
+    color:var(--muted);
+  }
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+
+  /* ---------- TOPBAR ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px clamp(18px,5vw,44px);
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;gap:10px;
+  }
+  .brandwrap{display:flex;align-items:center;gap:10px;cursor:pointer;}
+  .mark{
+    width:30px;height:30px;flex:none;border-radius:9px;
+    background:var(--primary);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mark svg{width:17px;height:17px;display:block;}
+  .brand{font-weight:800;font-size:16px;letter-spacing:-0.01em;}
+  .brand .navy{color:var(--secondary);}
+  .brand .teal{color:var(--primary-dark);}
+  .nav-right{display:flex;align-items:center;gap:8px;}
+  .nav-link{
+    background:none;border:none;color:var(--muted);
+    font-size:13px;font-weight:600;cursor:pointer;
+    padding:8px 10px;border-radius:var(--radius-sm);
+    font-family:inherit;
+  }
+  .nav-link:hover{background:var(--surface);color:var(--secondary);}
+  .nav-link.active{color:var(--primary-dark);}
+  .nav-name{font-size:13px;font-weight:700;color:var(--secondary);padding:8px 4px;}
+
+  main#stage{flex:1;display:flex;flex-direction:column;}
+  .view{display:none;flex:1;}
+  .view.active{display:flex;flex-direction:column;}
+
+  /* ---------- shared bits ---------- */
+  .btn-primary{
+    padding:14px 22px;background:var(--primary);color:var(--secondary);
+    border:none;border-radius:var(--radius-sm);font-size:14.5px;font-weight:800;
+    cursor:pointer;transition:background .15s ease, transform .1s ease;
+    font-family:inherit;
+  }
+  .btn-primary:hover{background:var(--primary-dark);color:#fff;}
+  .btn-primary:active{transform:scale(.99);}
+  .btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-secondary{
+    padding:13px 20px;background:#fff;color:var(--secondary);
+    border:1.5px solid var(--secondary);border-radius:var(--radius-sm);
+    font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;
+    transition:background .15s ease,color .15s ease;
+  }
+  .btn-secondary:hover{background:var(--secondary);color:#fff;}
+  .pill{
+    font-size:11.5px;padding:6px 12px;border-radius:30px;
+    background:var(--surface-2);color:var(--secondary);
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    letter-spacing:.01em;white-space:nowrap;
+  }
+  .avatar{
+    width:42px;height:42px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:15px;color:#fff;background:var(--secondary);
+  }
+
+  /* ---------- LOGIN / EDIT PROFILE ---------- */
+  #loginView{align-items:center;justify-content:center;padding:48px clamp(20px,6vw,48px) 64px;}
+  .login-inner{width:100%;max-width:440px;animation:rise .45s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .hero-mark{width:48px;height:48px;border-radius:14px;background:var(--primary);display:flex;align-items:center;justify-content:center;margin-bottom:22px;}
+  .hero-mark svg{width:26px;height:26px;}
+  h1.wordmark{font-size:clamp(34px,7vw,46px);line-height:1.05;font-weight:800;letter-spacing:-0.03em;margin:0 0 12px;}
+  .tagline{font-size:14.5px;color:var(--muted);margin:0 0 32px;max-width:380px;line-height:1.55;}
+  .field{margin-bottom:17px;}
+  .field label{display:block;margin-bottom:7px;}
+  .field input[type=text],.field select{
+    width:100%;padding:13px 14px;background:#fff;border:1.5px solid var(--border);
+    border-radius:var(--radius-sm);color:var(--secondary);font-size:14.5px;font-family:inherit;
+    outline:none;transition:border-color .15s ease;appearance:none;
+  }
+  .field select{
+    background-image:linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat;cursor:pointer;
+  }
+  .field input::placeholder{color:#a0aab8;}
+  .field input:focus,.field select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(20,184,166,.15);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:480px){.field-row{grid-template-columns:1fr;}}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px;}
+  .err{font-size:12.5px;color:var(--danger-dark);background:#FEF2F2;border:1px solid #FECACA;padding:10px 13px;border-radius:var(--radius-sm);margin-bottom:16px;display:none;}
+  .err.show{display:block;}
+  #loginView .btn-primary{width:100%;margin-top:6px;}
+  .cancel-edit{display:none;}
+
+  /* ---------- HOME ---------- */
+  #homeView{align-items:center;justify-content:center;padding:48px 20px;}
+  .home-inner{width:100%;max-width:520px;text-align:center;animation:rise .4s ease both;}
+  .home-eyebrow{margin-bottom:10px;}
+  .home-title{font-size:clamp(28px,6vw,38px);font-weight:800;letter-spacing:-0.025em;margin:0 0 10px;}
+  .home-title .accent{color:var(--primary-dark);}
+  .home-sub{color:var(--muted);font-size:14.5px;margin:0 0 22px;}
+  .home-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:30px;}
+  .home-stat{
+    display:inline-flex;align-items:center;gap:7px;
+    background:var(--surface);border:1px solid var(--border);
+    padding:8px 16px;border-radius:30px;font-size:12.5px;color:var(--muted);margin-bottom:30px;
+  }
+  .home-stat b{color:var(--secondary);}
+  .home-actions{display:flex;flex-direction:column;gap:12px;align-items:center;}
+  .home-actions .btn-primary{width:100%;max-width:320px;font-size:15.5px;padding:16px 22px;}
+  .home-links{display:flex;gap:18px;margin-top:18px;flex-wrap:wrap;justify-content:center;}
+  .home-links button{background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
+  .home-links button:hover{color:var(--secondary);}
+
+  /* ---------- SEARCHING ---------- */
+  #searchingView{align-items:center;justify-content:center;text-align:center;padding:48px 20px;gap:26px;}
+  .pulse-ring{width:100px;height:100px;position:relative;display:flex;align-items:center;justify-content:center;}
+  .pulse-ring .ring{position:absolute;inset:0;border:2px solid var(--primary);border-radius:50%;animation:expand 2.2s ease-out infinite;opacity:0;}
+  .pulse-ring .ring:nth-child(2){animation-delay:.7s;}
+  .pulse-ring .ring:nth-child(3){animation-delay:1.4s;}
+  @keyframes expand{0%{transform:scale(.35);opacity:.8;}100%{transform:scale(1);opacity:0;}}
+  .pulse-ring .glyph{width:34px;height:34px;border-radius:11px;background:var(--secondary);display:flex;align-items:center;justify-content:center;animation:spin 3.2s linear infinite;}
+  .pulse-ring .glyph svg{width:18px;height:18px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .searching-title{font-size:19px;font-weight:800;letter-spacing:-0.01em;}
+  .searching-sub{font-size:13.5px;color:var(--muted);max-width:320px;}
+  .searching-meta{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:2px;}
+  @media (prefers-reduced-motion: reduce){.pulse-ring .ring,.pulse-ring .glyph,.login-inner,.home-inner{animation:none;}}
+
+  /* ---------- CALL ---------- */
+  #callView{flex-direction:column;}
+  .call-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px clamp(16px,4vw,36px);border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;
+  }
+  .call-partner{display:flex;align-items:center;gap:11px;}
+  .call-partner-info{display:flex;flex-direction:column;gap:5px;}
+  .name-row{display:flex;align-items:center;gap:8px;}
+  .name-row .name{font-weight:800;font-size:14.5px;}
+  .role-tag{font-size:9.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.09em;background:var(--surface-2);padding:2px 8px;border-radius:20px;color:var(--secondary);}
+  .skill-tags{display:flex;gap:6px;flex-wrap:wrap;}
+  .skill-tags .pill{font-size:10.5px;padding:4px 10px;}
+  .call-status{font-size:11.5px;color:var(--muted);font-weight:600;}
+  .call-status.live{color:var(--primary-dark);}
+
+  .call-layout{flex:1;display:grid;grid-template-columns:1.5fr 1fr;min-height:0;}
+  @media (max-width:880px){.call-layout{grid-template-columns:1fr;grid-template-rows:auto auto;}}
+
+  .video-stage{
+    position:relative;background:var(--secondary);
+    display:flex;align-items:center;justify-content:center;
+    min-height:320px;overflow:hidden;
+  }
+  .video-stage video{width:100%;height:100%;object-fit:cover;display:block;}
+  #remoteVideo{position:absolute;inset:0;background:var(--secondary);}
+  .remote-placeholder{
+    position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px;color:#cbd5e1;
+  }
+  .remote-placeholder .avatar{width:64px;height:64px;font-size:22px;background:var(--primary);color:var(--secondary);}
+  .remote-placeholder span{font-size:13px;font-weight:600;}
+  .local-pip{
+    position:absolute;bottom:16px;right:16px;width:120px;height:90px;border-radius:10px;overflow:hidden;
+    border:2px solid rgba(255,255,255,.85);background:#1e293b;z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.3);
+  }
+  .local-pip video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);}
+  .local-pip .pip-off{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:10.5px;font-weight:700;text-align:center;padding:6px;}
+  .media-banner{
+    position:absolute;top:14px;left:14px;right:14px;z-index:3;
+    background:rgba(15,23,42,.88);color:#fff;font-size:12px;padding:9px 13px;border-radius:var(--radius-sm);
+    display:none;line-height:1.4;
+  }
+  .media-banner.show{display:block;}
+
+  .call-controls{
+    position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+    display:flex;gap:10px;z-index:3;
+  }
+  .ctrl-btn{
+    width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.14);color:#fff;backdrop-filter:blur(6px);
+    transition:background .15s ease;
+  }
+  .ctrl-btn:hover{background:rgba(255,255,255,.26);}
+  .ctrl-btn.off{background:#fff;color:var(--secondary);}
+  .ctrl-btn svg{width:19px;height:19px;}
+  .ctrl-btn.hangup{background:var(--danger);}
+  .ctrl-btn.hangup:hover{background:var(--danger-dark);}
+  .ctrl-btn.next-btn{width:auto;padding:0 16px;border-radius:22px;font-size:12.5px;font-weight:700;font-family:inherit;}
+
+  .chat-panel{display:flex;flex-direction:column;border-left:1px solid var(--border);min-height:0;}
+  @media (max-width:880px){.chat-panel{border-left:none;border-top:1px solid var(--border);max-height:46vh;}}
+  .messages{flex:1;overflow-y:auto;padding:18px clamp(14px,3vw,26px);display:flex;flex-direction:column;gap:9px;min-height:120px;}
+  .msg-row{display:flex;}
+  .msg-row.self{justify-content:flex-end;}
+  .bubble{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.45;animation:pop .16s ease both;word-wrap:break-word;}
+  @keyframes pop{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .msg-row.self .bubble{background:var(--primary);color:var(--secondary);border-bottom-right-radius:4px;}
+  .msg-row.other .bubble{background:var(--surface-2);color:var(--secondary);border-bottom-left-radius:4px;}
+  .msg-row.system{justify-content:center;margin:4px 0;}
+  .msg-row.system .bubble{background:none;border:1px dashed var(--border);color:var(--muted);font-size:11.5px;border-radius:20px;}
+  .empty-chat{margin:auto;text-align:center;color:var(--muted);font-size:13px;max-width:240px;}
+  .composer{display:flex;gap:8px;padding:13px clamp(14px,3vw,26px) 16px;border-top:1px solid var(--border);}
+  .composer input{flex:1;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--secondary);font-size:13.5px;font-family:inherit;outline:none;}
+  .composer input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(20,184,166,.15);}
+  .composer button{padding:0 18px;background:var(--primary);color:var(--secondary);border:none;border-radius:var(--radius-sm);font-weight:800;font-size:13px;cursor:pointer;}
+  .composer button:disabled{opacity:.4;cursor:not-allowed;}
+  .composer button:hover:not(:disabled){background:var(--primary-dark);color:#fff;}
+
+  /* ---------- ENDED ---------- */
+  #endedView{align-items:center;justify-content:center;text-align:center;gap:18px;padding:48px 20px;}
+  #endedView .x-mark{width:54px;height:54px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;}
+  #endedView .x-mark svg{width:24px;height:24px;}
+  #endedView h2{font-size:21px;margin:0;font-weight:800;letter-spacing:-0.01em;}
+  #endedView p{color:var(--muted);font-size:13.5px;margin:0;max-width:300px;}
+  .ended-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center;}
+
+  /* ---------- HISTORY ---------- */
+  #historyView{padding:0;}
+  .history-wrap{width:100%;max-width:680px;margin:0 auto;padding:40px clamp(18px,5vw,40px) 60px;}
+  .history-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .history-title{font-size:25px;font-weight:800;letter-spacing:-0.02em;margin:0;}
+  .history-sub{color:var(--muted);font-size:13.5px;margin:6px 0 26px;}
+  .history-list{display:flex;flex-direction:column;gap:10px;}
+  .history-card{
+    display:flex;gap:14px;align-items:flex-start;padding:16px 18px;
+    border:1px solid var(--border);border-radius:var(--radius);background:#fff;
+  }
+  .history-card .avatar{background:var(--surface-2);color:var(--secondary);}
+  .hc-main{flex:1;min-width:0;}
+  .hc-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px;}
+  .hc-name{font-weight:800;font-size:14.5px;display:flex;align-items:center;gap:8px;}
+  .hc-date{font-size:11.5px;color:var(--muted);white-space:nowrap;}
+  .hc-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+  .hc-pills .pill{font-size:10.5px;padding:4px 10px;}
+  .hc-duration{font-size:11.5px;color:var(--muted);}
+  .history-empty{text-align:center;padding:60px 20px;color:var(--muted);}
+  .history-empty .hero-mark{margin:0 auto 18px;}
+  .history-empty p{font-size:13.5px;max-width:280px;margin:8px auto 22px;}
+  .clear-history{display:block;margin:26px auto 0;background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:inherit;}
+  .clear-history:hover{color:var(--danger-dark);}
+
+  ::-webkit-scrollbar{width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:8px;}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--primary-dark);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brandwrap" id="brandLink">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 8.5H17.5M17.5 8.5L13.5 4.5M17.5 8.5L13.5 12.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 15.5H6.5M6.5 15.5L10.5 11.5M6.5 15.5L10.5 19.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="brand"><span class="navy">Meeto</span><span class="teal">Skill</span></div>
+    </div>
+    <div class="nav-right" id="navRight" style="display:none;">
+      <button class="nav-link" id="navHome">Home</button>
+      <button class="nav-link" id="navHistory">History</button>
+      <span class="nav-name" id="navName"></span>
+      <button class="nav-link" id="navSignOut">Sign out</button>
+    </div>
+  </header>
+
+  <main id="stage">
+
+    <!-- LOGIN / EDIT PROFILE -->
+    <section id="loginView" class="view active">
+      <div class="login-inner">
+        <div class="hero-mark">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8.5H17.5M17.5 8.5L13.5 4.5M17.5 8.5L13.5 12.5" stroke="#0F172A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 15.5H6.5M6.5 15.5L10.5 11.5M6.5 15.5L10.5 19.5" stroke="#0F172A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 class="wordmark" id="loginHeading">Meet people<br>worth trading skills with.</h1>
+        <p class="tagline" id="loginTagline">For creators, founders, editors and students. Tell us who you are, get matched live by video, no sign-up forms.</p>
+
+        <div class="err" id="loginErr"></div>
+
+        <div class="field">
+          <label class="label-face" for="nameInput">Your name</label>
+          <input type="text" id="nameInput" placeholder="e.g. Asha" maxlength="30" autocomplete="off">
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="label-face" for="roleSelect">You are a</label>
+            <select id="roleSelect">
+              <option value="Creator">Creator</option>
+              <option value="Entrepreneur">Entrepreneur</option>
+              <option value="Editor">Editor</option>
+              <option value="Student">Student</option>
+              <option value="Developer">Developer</option>
+              <option value="Designer">Designer</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field" id="otherRoleField" style="display:none;">
+            <label class="label-face" for="otherRoleInput">Specify</label>
+            <input type="text" id="otherRoleInput" placeholder="e.g. Podcaster" maxlength="24">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label-face" for="offerInput">Offering — a skill you can give</label>
+          <input type="text" id="offerInput" placeholder="e.g. Video editing, React, pitch decks" maxlength="60" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label class="label-face" for="wantInput">Seeking — a skill you want</label>
+          <input type="text" id="wantInput" placeholder="e.g. Copywriting, fundraising, UI design" maxlength="60" autocomplete="off">
+        </div>
+
+        <button class="btn-primary" id="startBtn">Continue →</button>
+        <button class="btn-secondary cancel-edit" id="cancelEditBtn" style="width:100%;margin-top:10px;">Cancel</button>
+        <p class="hint">Your profile is saved on this device/account so MeetoSkill remembers you next time.</p>
+      </div>
+    </section>
+
+    <!-- HOME -->
+    <section id="homeView" class="view">
+      <div class="home-inner">
+        <div class="home-eyebrow label-face">Welcome back</div>
+        <h2 class="home-title">Hey <span class="accent" id="homeName">there</span>, ready to trade?</h2>
+        <p class="home-sub" id="homeRoleLine">—</p>
+        <div class="home-pills" id="homePills"></div>
+        <div class="home-stat" id="homeStat">Loading your stats…</div>
+        <div class="home-actions">
+          <button class="btn-primary" id="startMatchBtn">Start matching →</button>
+        </div>
+        <div class="home-links">
+          <button id="goHistoryBtn">View history</button>
+          <button id="editProfileBtn">Edit profile</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCHING -->
+    <section id="searchingView" class="view">
+      <div class="pulse-ring">
+        <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+        <div class="glyph">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8.5H17.5M17.5 8.5L13.5 4.5M17.5 8.5L13.5 12.5" stroke="#14B8A6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 15.5H6.5M6.5 15.5L10.5 11.5M6.5 15.5L10.5 19.5" stroke="#14B8A6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="searching-title">Looking for a trade partner…</div>
+      <div class="searching-sub">We'll connect you by video the moment someone's a match.</div>
+      <div class="searching-meta">
+        <span class="pill" id="searchOfferPill"></span>
+        <span class="pill" id="searchWantPill"></span>
+      </div>
+      <button class="btn-secondary" id="cancelSearchBtn">Cancel</button>
+    </section>
+
+    <!-- CALL -->
+    <section id="callView" class="view">
+      <div class="call-header">
+        <div class="call-partner">
+          <div class="avatar" id="partnerAvatar">—</div>
+          <div class="call-partner-info">
+            <div class="name-row">
+              <span class="name" id="partnerName">—</span>
+              <span class="role-tag" id="partnerRole">—</span>
+            </div>
+            <div class="skill-tags">
+              <span class="pill" id="partnerOfferPill"></span>
+              <span class="pill" id="partnerWantPill"></span>
+            </div>
+          </div>
+        </div>
+        <div class="call-status" id="callStatus">Connecting…</div>
+      </div>
+
+      <div class="call-layout">
+        <div class="video-stage">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <div class="remote-placeholder" id="remotePlaceholder">
+            <div class="avatar" id="remotePlaceholderAvatar">—</div>
+            <span id="remotePlaceholderText">Waiting for video…</span>
+          </div>
+          <div class="media-banner" id="mediaBanner"></div>
+          <div class="local-pip">
+            <video id="localVideo" autoplay playsinline muted></video>
+            <div class="pip-off" id="pipOff" style="display:none;">Camera off</div>
+          </div>
+          <div class="call-controls">
+            <button class="ctrl-btn" id="micBtn" title="Mute / unmute">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 14.5a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5.5a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </button>
+            <button class="ctrl-btn" id="camBtn" title="Camera on / off">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6.5" width="13" height="11" rx="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M16.5 10.5 21 8v8l-4.5-2.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="ctrl-btn hangup" id="endCallBtn" title="End call">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M3.5 9.5c5-4.2 12-4.2 17 0l-2.2 3a1.6 1.6 0 0 1-1.9.2l-2-1.1a1.6 1.6 0 0 0-1.9.3l-1 1.1a9 9 0 0 1-3-3l1.1-1a1.6 1.6 0 0 0 .3-1.9l-1.1-2a1.6 1.6 0 0 1 .2-1.9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="ctrl-btn next-btn" id="nextBtn">Next ⤼</button>
+          </div>
+        </div>
+
+        <div class="chat-panel">
+          <div class="messages" id="messages">
+            <div class="empty-chat" id="emptyChat">You're connected. Say hello while your video connects.</div>
+          </div>
+          <div class="composer">
+            <input type="text" id="messageInput" placeholder="Type a message…" maxlength="500" autocomplete="off">
+            <button id="sendBtn">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ENDED -->
+    <section id="endedView" class="view">
+      <div class="x-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8.5 8.5L15.5 15.5M15.5 8.5L8.5 15.5" stroke="#0F172A" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h2 id="endedTitle">Call ended</h2>
+      <p id="endedSub">Saved to your history. Ready for another trade whenever you are.</p>
+      <div class="ended-actions">
+        <button class="btn-secondary" id="backHomeBtn">Back to home</button>
+        <button class="btn-primary" id="rematchBtn">Find new match →</button>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section id="historyView" class="view">
+      <div class="history-wrap">
+        <div class="history-head">
+          <h2 class="history-title">Your conversations</h2>
+          <button class="btn-secondary" id="historyBackBtn">Back</button>
+        </div>
+        <p class="history-sub">Everyone you've connected with on MeetoSkill.</p>
+        <div id="historyContent"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ===================== helpers =====================
+  const $ = id => document.getElementById(id);
+  const views = ['loginView','homeView','searchingView','callView','endedView','historyView'];
+  function showView(name){
+    views.forEach(v => $(v).classList.toggle('active', v === name));
+    $('navRight').style.display = profile ? 'flex' : 'none';
+    if($('navHome')) $('navHome').classList.toggle('active', name==='homeView');
+    if($('navHistory')) $('navHistory').classList.toggle('active', name==='historyView');
+  }
+  function uid(){ return Math.random().toString(36).slice(2,9) + Date.now().toString(36); }
+  function initials(name){
+    if(!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]||'')[0]||'').toUpperCase() + ((parts[1]||'')[0]||'').toUpperCase();
+  }
+  function fmtDate(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:'short',day:'numeric'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+  }
+  function fmtDuration(sec){
+    sec = Math.max(0, Math.round(sec));
+    const m = Math.floor(sec/60), s = sec%60;
+    return m + 'm ' + (s<10?'0':'') + s + 's';
+  }
+  async function storageGet(key, shared){
+    try{ const res = await window.storage.get(key, shared); return res ? res.value : null; }
+    catch(e){ return null; }
+  }
+  async function storageSet(key, value, shared){
+    try{ return await window.storage.set(key, value, shared); } catch(e){ return null; }
+  }
+  async function storageDelete(key, shared){
+    try{ return await window.storage.delete(key, shared); } catch(e){ return null; }
+  }
+  async function storageList(prefix, shared){
+    try{
+      const res = await window.storage.list(prefix, shared);
+      if(!res || !res.keys) return [];
+      return res.keys.map(k => typeof k === 'string' ? k : (k.key || k.name || '')).filter(Boolean);
+    }catch(e){ return []; }
+  }
+
+  // ===================== state =====================
+  const sessionId = uid();
+  let profile = null;
+  let editMode = false;
+  let currentRoomId = null;
+  let partner = null;
+  let isCallerFlag = false;
+  let searchTimer = null;
+  let chatTimer = null;
+  let signalTimer = null;
+  let seenMsgKeys = new Set();
+  let seenIceKeys = new Set();
+  let chatEnded = false;
+  let callStartTs = null;
+  let pc = null;
+  let localStream = null;
+  let remoteDescSet = false;
+  let pendingRemoteCandidates = [];
+  let iceSeq = 0;
+  let micOn = true;
+  let camOn = true;
+
+  // ===================== nav =====================
+  $('brandLink').addEventListener('click', () => { if(profile) showHome(); });
+  $('navHome').addEventListener('click', showHome);
+  $('navHistory').addEventListener('click', showHistory);
+  $('navSignOut').addEventListener('click', async () => {
+    await storageDelete('profile', false);
+    profile = null;
+    resetLoginForm();
+    $('loginHeading').innerHTML = 'Meet people<br>worth trading skills with.';
+    $('loginTagline').textContent = "For creators, founders, editors and students. Tell us who you are, get matched live by video, no sign-up forms.";
+    $('startBtn').textContent = 'Continue →';
+    $('cancelEditBtn').style.display = 'none';
+    showView('loginView');
+  });
+
+  // ===================== profile / login =====================
+  const roleSelect = $('roleSelect');
+  const otherRoleField = $('otherRoleField');
+  roleSelect.addEventListener('change', () => {
+    otherRoleField.style.display = roleSelect.value === 'Other' ? 'block' : 'none';
+  });
+
+  function resetLoginForm(){
+    $('nameInput').value = '';
+    roleSelect.value = 'Creator';
+    otherRoleField.style.display = 'none';
+    $('otherRoleInput').value = '';
+    $('offerInput').value = '';
+    $('wantInput').value = '';
+    $('loginErr').classList.remove('show');
+  }
+
+  function fillLoginForm(p){
+    $('nameInput').value = p.name || '';
+    const knownRoles = ['Creator','Entrepreneur','Editor','Student','Developer','Designer'];
+    if(knownRoles.includes(p.role)){
+      roleSelect.value = p.role; otherRoleField.style.display = 'none';
+    } else {
+      roleSelect.value = 'Other'; otherRoleField.style.display = 'block'; $('otherRoleInput').value = p.role || '';
+    }
+    $('offerInput').value = p.offer || '';
+    $('wantInput').value = p.want || '';
+  }
+
+  $('startBtn').addEventListener('click', onSaveProfile);
+  [$('nameInput'),$('offerInput'),$('wantInput')].forEach(el=>{
+    el.addEventListener('keydown', e => { if(e.key==='Enter') onSaveProfile(); });
+  });
+
+  async function onSaveProfile(){
+    const name = $('nameInput').value.trim();
+    const role = roleSelect.value === 'Other' ? ($('otherRoleInput').value.trim() || 'Other') : roleSelect.value;
+    const offer = $('offerInput').value.trim();
+    const want = $('wantInput').value.trim();
+    const errEl = $('loginErr');
+    if(!name || !offer || !want){
+      errEl.textContent = "Fill in your name, what you offer, and what you're looking for.";
+      errEl.classList.add('show');
+      return;
+    }
+    errEl.classList.remove('show');
+    profile = { id: sessionId, name, role, offer, want };
+    await storageSet('profile', JSON.stringify(profile), false);
+    editMode = false;
+    showHome();
+  }
+
+  $('editProfileBtn').addEventListener('click', () => {
+    editMode = true;
+    fillLoginForm(profile);
+    $('loginHeading').innerHTML = 'Edit your<br>profile.';
+    $('loginTagline').textContent = "Update what you offer and what you're after — your next match will see the new details.";
+    $('startBtn').textContent = 'Save changes';
+    $('cancelEditBtn').style.display = 'block';
+    $('loginErr').classList.remove('show');
+    showView('loginView');
+  });
+  $('cancelEditBtn').addEventListener('click', () => { showHome(); });
+
+  // ===================== home =====================
+  async function showHome(){
+    showView('homeView');
+    $('navName').textContent = profile.name;
+    $('homeName').textContent = profile.name;
+    $('homeRoleLine').textContent = profile.role + ' on MeetoSkill';
+    $('homePills').innerHTML =
+      '<span class="pill">Offering: ' + escapeHtml(profile.offer) + '</span>' +
+      '<span class="pill">Seeking: ' + escapeHtml(profile.want) + '</span>';
+    const keys = await storageList('history:', false);
+    $('homeStat').innerHTML = '<b>' + keys.length + '</b>&nbsp;' + (keys.length===1?'person':'people') + ' met so far';
+  }
+  $('startMatchBtn').addEventListener('click', beginSearch);
+  $('goHistoryBtn').addEventListener('click', showHistory);
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ===================== history =====================
+  async function showHistory(){
+    showView('historyView');
+    const content = $('historyContent');
+    content.innerHTML = '<p class="history-sub">Loading…</p>';
+    const keys = await storageList('history:', false);
+    let entries = [];
+    for(const k of keys){
+      const raw = await storageGet(k, false);
+      if(!raw) continue;
+      try{ entries.push(JSON.parse(raw)); }catch(e){}
+    }
+    entries.sort((a,b)=> b.ts - a.ts);
+
+    if(entries.length === 0){
+      content.innerHTML =
+        '<div class="history-empty">' +
+          '<div class="hero-mark" style="margin:0 auto 18px;"><svg viewBox="0 0 24 24" fill="none"><path d="M3 8.5H17.5M17.5 8.5L13.5 4.5M17.5 8.5L13.5 12.5" stroke="#0F172A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 15.5H6.5M6.5 15.5L10.5 11.5M6.5 15.5L10.5 19.5" stroke="#0F172A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+          '<strong>No conversations yet</strong>' +
+          '<p>Start matching and the people you connect with will show up here.</p>' +
+          '<button class="btn-primary" id="historyStartBtn">Start matching →</button>' +
+        '</div>';
+      $('historyStartBtn').addEventListener('click', beginSearch);
+      return;
+    }
+
+    let html = '<div class="history-list">';
+    entries.forEach(e=>{
+      html += '<div class="history-card">' +
+        '<div class="avatar">' + escapeHtml(initials(e.name)) + '</div>' +
+        '<div class="hc-main">' +
+          '<div class="hc-top">' +
+            '<div class="hc-name">' + escapeHtml(e.name||'Stranger') + ' <span class="role-tag">' + escapeHtml(e.role||'—') + '</span></div>' +
+            '<div class="hc-date">' + fmtDate(e.ts) + '</div>' +
+          '</div>' +
+          '<div class="hc-pills">' +
+            '<span class="pill">Offered: ' + escapeHtml(e.offer||'—') + '</span>' +
+            '<span class="pill">Sought: ' + escapeHtml(e.want||'—') + '</span>' +
+          '</div>' +
+          '<div class="hc-duration">' + fmtDuration(e.duration||0) + ' together' + (e.videoConnected ? ' · video connected' : ' · text only') + '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div><button class="clear-history" id="clearHistoryBtn">Clear history</button>';
+    content.innerHTML = html;
+    $('clearHistoryBtn').addEventListener('click', async () => {
+      for(const k of keys){ await storageDelete(k, false); }
+      showHistory();
+    });
+  }
+  $('historyBackBtn').addEventListener('click', showHome);
+  $('backHomeBtn').addEventListener('click', showHome);
+
+  // ===================== matching =====================
+  async function beginSearch(){
+    chatEnded = false;
+    showView('searchingView');
+    $('searchOfferPill').textContent = 'Offering: ' + profile.offer;
+    $('searchWantPill').textContent = 'Seeking: ' + profile.want;
+    await writeOwnQueueEntry('waiting');
+    searchTimer = setInterval(matchTick, 2200);
+    matchTick();
+  }
+
+  async function writeOwnQueueEntry(status, extra){
+    const entry = Object.assign({
+      id: profile.id, name: profile.name, role: profile.role,
+      offer: profile.offer, want: profile.want, status, ts: Date.now()
+    }, extra || {});
+    await storageSet('queue:' + profile.id, JSON.stringify(entry), true);
+    return entry;
+  }
+
+  function relates(a,b){
+    if(!a || !b) return false;
+    a=a.toLowerCase(); b=b.toLowerCase();
+    return a.includes(b) || b.includes(a);
+  }
+
+  async function matchTick(){
+    if(!profile) return;
+    const ownRaw = await storageGet('queue:' + profile.id, true);
+    let own = null;
+    try{ own = ownRaw ? JSON.parse(ownRaw) : null; }catch(e){ own = null; }
+
+    if(own && own.status === 'matched' && own.roomId){
+      stopSearch();
+      enterCall(own.roomId, {
+        id: own.partnerId, name: own.partnerName, role: own.partnerRole,
+        offer: own.partnerOffer, want: own.partnerWant
+      });
+      return;
+    }
+
+    await writeOwnQueueEntry('waiting');
+
+    const keys = await storageList('queue:', true);
+    const now = Date.now();
+    let candidates = [];
+    for(const k of keys){
+      if(k === 'queue:' + profile.id) continue;
+      const raw = await storageGet(k, true);
+      if(!raw) continue;
+      let c; try{ c = JSON.parse(raw); }catch(e){ continue; }
+      if(!c || c.status !== 'waiting') continue;
+      if(now - c.ts > 70000){ storageDelete(k, true); continue; }
+      candidates.push(c);
+    }
+    if(candidates.length === 0) return;
+
+    candidates.sort((a,b)=>{
+      const aScore = (relates(profile.want,a.offer) || relates(profile.offer,a.want)) ? 0 : 1;
+      const bScore = (relates(profile.want,b.offer) || relates(profile.offer,b.want)) ? 0 : 1;
+      if(aScore !== bScore) return aScore - bScore;
+      return a.ts - b.ts;
+    });
+    const candidate = candidates[0];
+
+    if(profile.id < candidate.id){
+      const roomId = 'room_' + profile.id + '_' + candidate.id;
+      await storageSet('queue:' + profile.id, JSON.stringify(Object.assign({}, own||{}, {
+        id: profile.id, status:'matched', roomId,
+        partnerId: candidate.id, partnerName: candidate.name, partnerRole: candidate.role,
+        partnerOffer: candidate.offer, partnerWant: candidate.want, ts: Date.now()
+      })), true);
+      await storageSet('queue:' + candidate.id, JSON.stringify(Object.assign({}, candidate, {
+        status:'matched', roomId,
+        partnerId: profile.id, partnerName: profile.name, partnerRole: profile.role,
+        partnerOffer: profile.offer, partnerWant: profile.want, ts: Date.now()
+      })), true);
+      stopSearch();
+      enterCall(roomId, candidate);
+    }
+  }
+
+  function stopSearch(){ if(searchTimer){ clearInterval(searchTimer); searchTimer = null; } }
+
+  $('cancelSearchBtn').addEventListener('click', async () => {
+    stopSearch();
+    await storageDelete('queue:' + profile.id, true);
+    showHome();
+  });
+
+  // ===================== call (webrtc + chat) =====================
+  async function enterCall(roomId, partnerInfo){
+    currentRoomId = roomId;
+    partner = partnerInfo;
+    isCallerFlag = profile.id < partner.id;
+    callStartTs = Date.now();
+    chatEnded = false;
+    seenMsgKeys = new Set();
+    seenIceKeys = new Set();
+    remoteDescSet = false;
+    pendingRemoteCandidates = [];
+    iceSeq = 0;
+    micOn = true; camOn = true;
+
+    $('partnerAvatar').textContent = initials(partner.name);
+    $('remotePlaceholderAvatar').textContent = initials(partner.name);
+    $('partnerName').textContent = partner.name || 'Stranger';
+    $('partnerRole').textContent = partner.role || '—';
+    $('partnerOfferPill').textContent = 'Offers: ' + (partner.offer || '—');
+    $('partnerWantPill').textContent = 'Seeks: ' + (partner.want || '—');
+    $('callStatus').textContent = 'Connecting…';
+    $('callStatus').classList.remove('live');
+    $('remotePlaceholder').style.display = 'flex';
+    $('remotePlaceholderText').textContent = 'Waiting for video…';
+    $('mediaBanner').classList.remove('show');
+    $('micBtn').classList.remove('off');
+    $('camBtn').classList.remove('off');
+    $('micBtn').style.display = 'flex';
+    $('camBtn').style.display = 'flex';
+    $('pipOff').style.display = 'none';
+
+    const msgsEl = $('messages');
+    msgsEl.innerHTML = '<div class="empty-chat" id="emptyChat">You\'re connected. Say hello while your video connects.</div>';
+    $('messageInput').value = '';
+    $('messageInput').disabled = false;
+    $('sendBtn').disabled = false;
+
+    showView('callView');
+    $('messageInput').focus();
+
+    await setupMedia();
+    setupPeerConnection();
+
+    if(isCallerFlag){
+      try{
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await storageSet('signal:' + roomId + ':offer', JSON.stringify(pc.localDescription), true);
+      }catch(e){}
+    }
+
+    signalTimer = setInterval(pollSignaling, 1500);
+    chatTimer = setInterval(pollChat, 1600);
+    pollSignaling();
+    pollChat();
+  }
+
+  async function setupMedia(){
+    try{
+      localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+      $('localVideo').srcObject = localStream;
+    }catch(e){
+      localStream = null;
+      const banner = $('mediaBanner');
+      banner.textContent = "Camera/microphone isn't available here (blocked or denied). You can still chat by text below.";
+      banner.classList.add('show');
+      $('pipOff').style.display = 'flex';
+      $('pipOff').textContent = 'No camera';
+      $('micBtn').style.display = 'none';
+      $('camBtn').style.display = 'none';
+    }
+  }
+
+  function setupPeerConnection(){
+    pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    });
+    if(localStream){
+      localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    }
+    pc.ontrack = (e) => {
+      $('remoteVideo').srcObject = e.streams[0];
+      $('remotePlaceholder').style.display = 'none';
+    };
+    pc.onicecandidate = (e) => {
+      if(e.candidate && currentRoomId){
+        storageSet('signal:' + currentRoomId + ':ice:' + profile.id + ':' + (iceSeq++), JSON.stringify(e.candidate), true);
+      }
+    };
+    pc.onconnectionstatechange = () => {
+      if(!pc) return;
+      const st = pc.connectionState;
+      const statusEl = $('callStatus');
+      if(st === 'connected'){
+        statusEl.textContent = 'Live'; statusEl.classList.add('live');
+      } else if(st === 'connecting'){
+        statusEl.textContent = 'Connecting…'; statusEl.classList.remove('live');
+      } else if(st === 'failed' || st === 'disconnected'){
+        statusEl.textContent = 'Video unavailable — chat still works';
+        statusEl.classList.remove('live');
+        $('remotePlaceholderText').textContent = "Couldn't establish video on this network";
+      }
+    };
+  }
+
+  async function pollSignaling(){
+    if(!pc || !currentRoomId) return;
+
+    if(!remoteDescSet){
+      if(isCallerFlag){
+        const raw = await storageGet('signal:' + currentRoomId + ':answer', true);
+        if(raw){
+          try{
+            const desc = JSON.parse(raw);
+            await pc.setRemoteDescription(new RTCSessionDescription(desc));
+            remoteDescSet = true;
+            for(const c of pendingRemoteCandidates){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} }
+            pendingRemoteCandidates = [];
+          }catch(e){}
+        }
+      } else {
+        const raw = await storageGet('signal:' + currentRoomId + ':offer', true);
+        if(raw){
+          try{
+            const desc = JSON.parse(raw);
+            await pc.setRemoteDescription(new RTCSessionDescription(desc));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await storageSet('signal:' + currentRoomId + ':answer', JSON.stringify(pc.localDescription), true);
+            remoteDescSet = true;
+            for(const c of pendingRemoteCandidates){ try{ await pc.addIceCandidate(new RTCIceCandidate(c)); }catch(e){} }
+            pendingRemoteCandidates = [];
+          }catch(e){}
+        }
+      }
+    }
+
+    if(!partner) return;
+    const keys = await storageList('signal:' + currentRoomId + ':ice:' + partner.id + ':', true);
+    const newKeys = keys.filter(k => !seenIceKeys.has(k));
+    for(const k of newKeys){
+      seenIceKeys.add(k);
+      const raw = await storageGet(k, true);
+      if(!raw) continue;
+      let cand; try{ cand = JSON.parse(raw); }catch(e){ continue; }
+      if(!cand) continue;
+      if(remoteDescSet){ try{ await pc.addIceCandidate(new RTCIceCandidate(cand)); }catch(e){} }
+      else{ pendingRemoteCandidates.push(cand); }
+    }
+  }
+
+  // mic / camera toggles
+  $('micBtn').addEventListener('click', () => {
+    if(!localStream) return;
+    micOn = !micOn;
+    localStream.getAudioTracks().forEach(t => t.enabled = micOn);
+    $('micBtn').classList.toggle('off', !micOn);
+  });
+  $('camBtn').addEventListener('click', () => {
+    if(!localStream) return;
+    camOn = !camOn;
+    localStream.getVideoTracks().forEach(t => t.enabled = camOn);
+    $('camBtn').classList.toggle('off', !camOn);
+    $('pipOff').style.display = camOn ? 'none' : 'flex';
+    $('pipOff').textContent = 'Camera off';
+  });
+
+  // ===================== text chat =====================
+  async function pollChat(){
+    if(!currentRoomId) return;
+    const keys = await storageList('chat:' + currentRoomId + ':', true);
+    const newKeys = keys.filter(k => !seenMsgKeys.has(k)).sort();
+    if(newKeys.length === 0) return;
+    let items = [];
+    for(const k of newKeys){
+      seenMsgKeys.add(k);
+      const raw = await storageGet(k, true);
+      if(!raw) continue;
+      try{ items.push(JSON.parse(raw)); }catch(e){}
+    }
+    items.sort((a,b)=>a.ts-b.ts);
+    items.forEach(renderMessage);
+  }
+
+  function renderMessage(msg){
+    const msgsEl = $('messages');
+    const empty = $('emptyChat');
+    if(empty) empty.remove();
+
+    if(msg.type === 'system'){
+      if(msg.sender !== profile.id && msg.text === 'left'){ handlePartnerLeft(); }
+      const row = document.createElement('div');
+      row.className = 'msg-row system';
+      row.innerHTML = '<div class="bubble">' + escapeHtml(msg.label || 'Stranger left the conversation') + '</div>';
+      msgsEl.appendChild(row);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+      return;
+    }
+    const isSelf = msg.sender === profile.id;
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (isSelf ? 'self' : 'other');
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = msg.text;
+    row.appendChild(bubble);
+    msgsEl.appendChild(row);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  }
+
+  async function sendMessage(){
+    const input = $('messageInput');
+    const text = input.value.trim();
+    if(!text || !currentRoomId || chatEnded) return;
+    input.value = '';
+    const key = 'chat:' + currentRoomId + ':' + Date.now() + '_' + uid();
+    const msg = { sender: profile.id, name: profile.name, text, ts: Date.now() };
+    seenMsgKeys.add(key);
+    renderMessage(msg);
+    await storageSet(key, JSON.stringify(msg), true);
+  }
+  $('sendBtn').addEventListener('click', sendMessage);
+  $('messageInput').addEventListener('keydown', e => { if(e.key==='Enter') sendMessage(); });
+
+  function handlePartnerLeft(){
+    if(chatEnded) return;
+    chatEnded = true;
+    stopTimers();
+    $('messageInput').disabled = true;
+    $('sendBtn').disabled = true;
+    setTimeout(async () => {
+      const videoConnected = !!(pc && pc.connectionState === 'connected');
+      await saveHistoryEntry(videoConnected);
+      teardownMedia();
+      $('endedTitle').textContent = 'Stranger disconnected';
+      $('endedSub').textContent = "They've left the call. Saved to your history.";
+      showView('endedView');
+    }, 600);
+  }
+
+  function stopTimers(){
+    if(signalTimer){ clearInterval(signalTimer); signalTimer = null; }
+    if(chatTimer){ clearInterval(chatTimer); chatTimer = null; }
+  }
+
+  function teardownMedia(){
+    if(pc){ try{ pc.close(); }catch(e){} pc = null; }
+    if(localStream){ localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    $('localVideo').srcObject = null;
+    $('remoteVideo').srcObject = null;
+  }
+
+  async function saveHistoryEntry(videoConnected){
+    if(!partner) return;
+    const duration = callStartTs ? (Date.now() - callStartTs) / 1000 : 0;
+    const entry = {
+      name: partner.name, role: partner.role, offer: partner.offer, want: partner.want,
+      ts: Date.now(), duration, videoConnected: !!videoConnected
+    };
+    await storageSet('history:' + Date.now() + '_' + uid(), JSON.stringify(entry), false);
+  }
+
+  async function leaveCall(systemLabel){
+    if(currentRoomId && !chatEnded){
+      const videoConnected = !!(pc && pc.connectionState === 'connected');
+      const key = 'chat:' + currentRoomId + ':' + Date.now() + '_' + uid();
+      await storageSet(key, JSON.stringify({ type:'system', sender: profile.id, text:'left', label: systemLabel || 'You left the call', ts: Date.now() }), true);
+      await saveHistoryEntry(videoConnected);
+    }
+    stopTimers();
+    chatEnded = true;
+    teardownMedia();
+    await storageDelete('queue:' + profile.id, true);
+    currentRoomId = null;
+    partner = null;
+  }
+
+  $('endCallBtn').addEventListener('click', async () => {
+    await leaveCall('You left the call');
+    $('endedTitle').textContent = 'Call ended';
+    $('endedSub').textContent = 'Saved to your history. Ready for another trade whenever you are.';
+    showView('endedView');
+  });
+
+  $('nextBtn').addEventListener('click', async () => {
+    await leaveCall('Partner moved to a new match');
+    beginSearch();
+  });
+
+  $('rematchBtn').addEventListener('click', beginSearch);
+
+  // ===================== init =====================
+  async function init(){
+    const raw = await storageGet('profile', false);
+    if(raw){
+      try{ profile = JSON.parse(raw); profile.id = sessionId; }catch(e){ profile = null; }
+    }
+    if(profile){
+      showHome();
+    } else {
+      showView('loginView');
+    }
+  }
+  init();
+
+})();
+</script>
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>
